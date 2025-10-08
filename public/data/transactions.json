@@ -1,0 +1,37 @@
+[
+  {
+    "id": "trx_001",
+    "fecha": "2025-10-07",
+    "titulo": "Consejo sobre ahorro de emergencia",
+    "tipo": "Recomendación",
+    "categoria": "ahorro"
+  },
+  {
+    "id": "trx_002",
+    "fecha": "2025-10-06",
+    "titulo": "Análisis de gastos en ocio",
+    "tipo": "Recomendación",
+    "categoria": "control_gastos"
+  },
+  {
+    "id": "trx_003",
+    "fecha": "2025-10-05",
+    "titulo": "Oportunidad de inversión en CDT",
+    "tipo": "Recomendación",
+    "categoria": "inversion"
+  },
+  {
+    "id": "trx_004",
+    "fecha": "2025-10-04",
+    "titulo": "Estrategia para reducir deuda",
+    "tipo": "Recomendación",
+    "categoria": "manejo_deudas"
+  },
+  {
+    "id": "trx_005",
+    "fecha": "2025-10-03",
+    "titulo": "Educación: Entendiendo tasas de interés",
+    "tipo": "Contenido educativo",
+    "categoria": "educacion_financiera"
+  }
+]

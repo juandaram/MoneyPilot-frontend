@@ -1,0 +1,14 @@
+{
+  "id": "rec_20251008_001",
+  "fecha": "2025-10-08",
+  "titulo": "Prioriza pagar tu tarjeta de crédito",
+  "mensaje_principal": "Con una tasa de interés del 25% anual, tu deuda de tarjeta de crédito te está costando aproximadamente $16,667 al mes solo en intereses. Si destinas $100,000 adicionales de tu ahorro mensual al pago de esta deuda, podrías liquidarla en 9 meses y ahorrar más de $90,000 en intereses.",
+  "nivel_confianza": 0.92,
+  "contexto_adicional": {
+    "razon": "Tu tasa de interés de tarjeta es muy alta comparada con el promedio en Colombia (18-22%). Reducir esta deuda te liberará flujo de caja para tu meta de fondo de emergencia.",
+    "accion_sugerida": "Considera hacer un pago extra de $100,000 este mes además del pago mínimo.",
+    "impacto_estimado": "Ahorrarás $90,000 en intereses y liberarás $116,667/mes en 9 meses"
+  },
+  "categoria": "manejo_deudas",
+  "prioridad": "alta"
+}

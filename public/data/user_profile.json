@@ -1,0 +1,56 @@
+{
+  "id": "usr_001",
+  "personal_info": {
+    "nombre": "María López",
+    "edad": 26,
+    "pais": "Colombia",
+    "ciudad": "Bogotá"
+  },
+  "financial_info": {
+    "ingreso_mensual": 2800000,
+    "tipo_ingreso": "fijo",
+    "gastos_principales": {
+      "vivienda": 900000,
+      "alimentacion": 600000,
+      "transporte": 300000,
+      "ocio": 200000,
+      "otros": 200000
+    },
+    "deudas": [
+      {
+        "tipo": "tarjeta_credito",
+        "monto": 800000,
+        "tasa_interes": 0.25
+      }
+    ],
+    "ahorro_mensual": 300000
+  },
+  "goals": {
+    "meta_principal": "crear_fondo_emergencia",
+    "plazo": "6_meses",
+    "monto_objetivo": 1500000
+  },
+  "knowledge_profile": {
+    "nivel_conocimiento_financiero": 2,
+    "tolerancia_riesgo": "medio",
+    "areas_interes": ["ahorro", "manejo_deudas", "educacion_financiera"]
+  },
+  "preferences": {
+    "tono_comunicacion": "amigable",
+    "idioma": "es",
+    "notificaciones": {
+      "diarias": true,
+      "horario_preferido": "08:00",
+      "canal": "push"
+    }
+  },
+  "system_meta": {
+    "fecha_creacion": "2025-10-06T10:00:00Z",
+    "ultima_actualizacion": "2025-10-06T10:00:00Z",
+    "nivel_confianza_promedio": 0.88,
+    "feedback_utilidad": {
+      "porcentaje_util": 0.82,
+      "comentarios_recientes": ["Muy útil para reducir mis gastos", "Buen contexto sobre tasas"]
+    }
+  }
+}
