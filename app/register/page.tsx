@@ -5,13 +5,32 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft, ArrowRight, TrendingUp } from "lucide-react"
 
+const formatCurrency = (value: string) => {
+  const num = value.replace(/\D/g, "")
+  return num.replace(/\B(?=(\d{3})+(?!\d))/g, ".")
+}
+
+const parseCurrency = (value: string) => {
+  return value.replace(/\./g, "")
+}
+
+const CATEGORY_COLORS = {
+  income: "border-emerald-500 focus:ring-emerald-500",
+  expenses: "border-orange-500 focus:ring-orange-500",
+  debt: "border-red-500 focus:ring-red-500",
+  savings: "border-blue-500 focus:ring-blue-500",
+  goals: "border-purple-500 focus:ring-purple-500",
+  knowledge: "border-teal-500 focus:ring-teal-500",
+}
+
 const QUESTIONS = [
   {
     id: "ingreso_mensual",
     question: "¿Cuál es tu ingreso mensual promedio actual?",
     type: "number",
-    placeholder: "Ej: 2800000",
-    suffix: "en tu moneda local",
+    placeholder: "Ej: 2.800.000",
+    suffix: "COP (Pesos colombianos)",
+    category: "income",
   },
   {
     id: "tipo_ingreso",
@@ -21,28 +40,34 @@ const QUESTIONS = [
       { value: "fijo", label: "Fijos" },
       { value: "variables", label: "Variables" },
     ],
+    category: "income",
   },
   {
     id: "gastos",
     question: "¿Cuáles son tus principales gastos mensuales?",
     type: "expenses",
     categories: ["vivienda", "alimentacion", "transporte", "educacion", "ocio", "otros"],
+    category: "expenses",
   },
   {
     id: "deudas",
     question: "¿Tienes alguna deuda actualmente?",
     type: "debt",
+    category: "debt",
   },
   {
     id: "ahorro_mensual",
     question: "¿Cuánto logras ahorrar al mes, en promedio?",
     type: "number",
-    placeholder: "Ej: 300000",
+    placeholder: "Ej: 300.000",
+    suffix: "COP (Pesos colombianos)",
+    category: "savings",
   },
   {
     id: "meta_financiera",
     question: "¿Tienes alguna meta financiera a corto/mediano plazo?",
     type: "goal",
+    category: "goals",
   },
   {
     id: "nivel_conocimiento",
@@ -51,6 +76,7 @@ const QUESTIONS = [
     min: 1,
     max: 5,
     labels: ["Muy bajo", "Bajo", "Medio", "Alto", "Muy alto"],
+    category: "knowledge",
   },
   {
     id: "tolerancia_riesgo",
@@ -61,6 +87,7 @@ const QUESTIONS = [
       { value: "medio", label: "Medio - Balance entre seguridad y crecimiento" },
       { value: "alto", label: "Alto - Busco mayor crecimiento" },
     ],
+    category: "knowledge",
   },
   {
     id: "areas_interes",
@@ -73,25 +100,28 @@ const QUESTIONS = [
       { value: "manejo_deudas", label: "Manejo de deudas" },
       { value: "educacion_financiera", label: "Educación financiera" },
     ],
+    category: "knowledge",
   },
   {
     id: "ubicacion",
     question: "¿En qué país y ciudad vives actualmente?",
     type: "location",
+    category: "knowledge",
   },
 ]
 
 export default function RegisterPage() {
   const router = useRouter()
-  const [step, setStep] = useState(0)
+  const [step, setStep] = useState(-1)
   const [formData, setFormData] = useState<Record<string, any>>({
     email: "",
     password: "",
     nombre: "",
+    telefono: "",
   })
 
-  const currentQuestion = QUESTIONS[step]
-  const progress = ((step + 1) / (QUESTIONS.length + 1)) * 100
+  const currentQuestion = step >= 0 ? QUESTIONS[step] : null
+  const progress = step >= 0 ? ((step + 1) / (QUESTIONS.length + 1)) * 100 : 0
 
   const handleNext = () => {
     if (step < QUESTIONS.length - 1) {
@@ -104,6 +134,8 @@ export default function RegisterPage() {
   const handleBack = () => {
     if (step > 0) {
       setStep(step - 1)
+    } else if (step === 0) {
+      setStep(-1)
     }
   }
 
@@ -125,7 +157,6 @@ export default function RegisterPage() {
   }
 
   if (step === -1) {
-    // Initial step: email, password, name
     return (
       <div className="min-h-screen bg-background flex flex-col">
         <header className="border-b border-border bg-card">
@@ -164,6 +195,17 @@ export default function RegisterPage() {
                   onChange={(e) => updateFormData("email", e.target.value)}
                   className="w-full px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
                   placeholder="tu@email.com"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Teléfono</label>
+                <input
+                  type="tel"
+                  value={formData.telefono}
+                  onChange={(e) => updateFormData("telefono", e.target.value)}
+                  className="w-full px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                  placeholder="+57 300 123 4567"
                 />
               </div>
 
@@ -228,22 +270,22 @@ export default function RegisterPage() {
 
       <main className="flex-1 container mx-auto px-4 py-8 flex items-center justify-center">
         <div className="w-full max-w-2xl">
-          <QuestionRenderer
-            question={currentQuestion}
-            value={formData[currentQuestion.id]}
-            onChange={(value) => updateFormData(currentQuestion.id, value)}
-          />
+          {currentQuestion && (
+            <QuestionRenderer
+              question={currentQuestion}
+              value={formData[currentQuestion.id]}
+              onChange={(value) => updateFormData(currentQuestion.id, value)}
+            />
+          )}
 
           <div className="flex gap-4 mt-8">
-            {step > 0 && (
-              <button
-                onClick={handleBack}
-                className="flex items-center gap-2 px-6 py-3 bg-secondary text-secondary-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Anterior
-              </button>
-            )}
+            <button
+              onClick={handleBack}
+              className="flex items-center gap-2 px-6 py-3 bg-secondary text-secondary-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Anterior
+            </button>
             <button
               onClick={handleNext}
               className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
@@ -267,19 +309,25 @@ function QuestionRenderer({
   value: any
   onChange: (value: any) => void
 }) {
+  const categoryColor =
+    CATEGORY_COLORS[question.category as keyof typeof CATEGORY_COLORS] || "border-input focus:ring-ring"
+
   return (
     <div>
       <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-6 text-balance">{question.question}</h2>
 
       {question.type === "number" && (
         <div>
-          <input
-            type="number"
-            value={value || ""}
-            onChange={(e) => onChange(e.target.value)}
-            className="w-full px-4 py-3 text-lg border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
-            placeholder={question.placeholder}
-          />
+          <div className="relative">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg text-muted-foreground">$</span>
+            <input
+              type="text"
+              value={value ? formatCurrency(value) : ""}
+              onChange={(e) => onChange(parseCurrency(e.target.value))}
+              className={`w-full pl-8 pr-4 py-3 text-lg border-2 ${categoryColor} rounded-lg focus:outline-none focus:ring-2`}
+              placeholder={question.placeholder}
+            />
+          </div>
           {question.suffix && <p className="text-sm text-muted-foreground mt-2">{question.suffix}</p>}
         </div>
       )}
@@ -289,7 +337,9 @@ function QuestionRenderer({
           {question.options.map((option: any) => (
             <label
               key={option.value}
-              className="flex items-center gap-3 p-4 border border-input rounded-lg cursor-pointer hover:bg-secondary/50 transition-colors"
+              className={`flex items-center gap-3 p-4 border-2 ${
+                value === option.value ? categoryColor : "border-input"
+              } rounded-lg cursor-pointer hover:bg-secondary/50 transition-colors`}
             >
               <input
                 type="radio"
@@ -310,7 +360,9 @@ function QuestionRenderer({
           {question.options.map((option: any) => (
             <label
               key={option.value}
-              className="flex items-center gap-3 p-4 border border-input rounded-lg cursor-pointer hover:bg-secondary/50 transition-colors"
+              className={`flex items-center gap-3 p-4 border-2 ${
+                (value || []).includes(option.value) ? categoryColor : "border-input"
+              } rounded-lg cursor-pointer hover:bg-secondary/50 transition-colors`}
             >
               <input
                 type="checkbox"
@@ -339,10 +391,10 @@ function QuestionRenderer({
               <button
                 key={num}
                 onClick={() => onChange(num)}
-                className={`flex-1 py-4 rounded-lg font-medium transition-colors ${
+                className={`flex-1 py-4 rounded-lg font-medium transition-colors border-2 ${
                   value === num
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                    ? `${categoryColor} bg-primary text-primary-foreground`
+                    : "border-input bg-secondary text-secondary-foreground hover:bg-secondary/80"
                 }`}
               >
                 {num}
@@ -363,13 +415,17 @@ function QuestionRenderer({
               <label className="block text-sm font-medium text-foreground mb-2 capitalize">
                 {category.replace("_", " ")}
               </label>
-              <input
-                type="number"
-                value={(value || {})[category] || ""}
-                onChange={(e) => onChange({ ...(value || {}), [category]: e.target.value })}
-                className="w-full px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
-                placeholder="0"
-              />
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                <input
+                  type="text"
+                  value={(value || {})[category] ? formatCurrency((value || {})[category]) : ""}
+                  onChange={(e) => onChange({ ...(value || {}), [category]: parseCurrency(e.target.value) })}
+                  className={`w-full pl-8 pr-4 py-2 border-2 ${categoryColor} rounded-lg focus:outline-none focus:ring-2`}
+                  placeholder="0"
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">COP</span>
+              </div>
             </div>
           ))}
         </div>
@@ -380,20 +436,20 @@ function QuestionRenderer({
           <div className="flex gap-4">
             <button
               onClick={() => onChange({ tiene_deuda: false })}
-              className={`flex-1 py-3 rounded-lg font-medium transition-colors ${
+              className={`flex-1 py-3 rounded-lg font-medium transition-colors border-2 ${
                 value?.tiene_deuda === false
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                  ? `${categoryColor} bg-primary text-primary-foreground`
+                  : "border-input bg-secondary text-secondary-foreground hover:bg-secondary/80"
               }`}
             >
               No
             </button>
             <button
               onClick={() => onChange({ tiene_deuda: true })}
-              className={`flex-1 py-3 rounded-lg font-medium transition-colors ${
+              className={`flex-1 py-3 rounded-lg font-medium transition-colors border-2 ${
                 value?.tiene_deuda === true
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                  ? `${categoryColor} bg-primary text-primary-foreground`
+                  : "border-input bg-secondary text-secondary-foreground hover:bg-secondary/80"
               }`}
             >
               Sí
@@ -407,7 +463,7 @@ function QuestionRenderer({
                 <select
                   value={value.tipo || ""}
                   onChange={(e) => onChange({ ...value, tipo: e.target.value })}
-                  className="w-full px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                  className={`w-full px-4 py-2 border-2 ${categoryColor} rounded-lg focus:outline-none focus:ring-2`}
                 >
                   <option value="">Selecciona...</option>
                   <option value="tarjeta_credito">Tarjeta de crédito</option>
@@ -418,13 +474,17 @@ function QuestionRenderer({
               </div>
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">Monto total</label>
-                <input
-                  type="number"
-                  value={value.monto || ""}
-                  onChange={(e) => onChange({ ...value, monto: e.target.value })}
-                  className="w-full px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
-                  placeholder="0"
-                />
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                  <input
+                    type="text"
+                    value={value.monto ? formatCurrency(value.monto) : ""}
+                    onChange={(e) => onChange({ ...value, monto: parseCurrency(e.target.value) })}
+                    className={`w-full pl-8 pr-4 py-2 border-2 ${categoryColor} rounded-lg focus:outline-none focus:ring-2`}
+                    placeholder="0"
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">COP</span>
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">Tasa de interés aproximada (%)</label>
@@ -432,7 +492,7 @@ function QuestionRenderer({
                   type="number"
                   value={value.tasa || ""}
                   onChange={(e) => onChange({ ...value, tasa: e.target.value })}
-                  className="w-full px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                  className={`w-full px-4 py-2 border-2 ${categoryColor} rounded-lg focus:outline-none focus:ring-2`}
                   placeholder="25"
                 />
               </div>
@@ -449,7 +509,7 @@ function QuestionRenderer({
               type="text"
               value={value?.descripcion || ""}
               onChange={(e) => onChange({ ...(value || {}), descripcion: e.target.value })}
-              className="w-full px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+              className={`w-full px-4 py-2 border-2 ${categoryColor} rounded-lg focus:outline-none focus:ring-2`}
               placeholder="Ej: Crear fondo de emergencia"
             />
           </div>
@@ -458,7 +518,7 @@ function QuestionRenderer({
             <select
               value={value?.plazo || ""}
               onChange={(e) => onChange({ ...(value || {}), plazo: e.target.value })}
-              className="w-full px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+              className={`w-full px-4 py-2 border-2 ${categoryColor} rounded-lg focus:outline-none focus:ring-2`}
             >
               <option value="">Selecciona...</option>
               <option value="3m">3 meses</option>
@@ -469,13 +529,17 @@ function QuestionRenderer({
           </div>
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">Monto objetivo</label>
-            <input
-              type="number"
-              value={value?.monto || ""}
-              onChange={(e) => onChange({ ...(value || {}), monto: e.target.value })}
-              className="w-full px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
-              placeholder="0"
-            />
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+              <input
+                type="text"
+                value={value?.monto ? formatCurrency(value.monto) : ""}
+                onChange={(e) => onChange({ ...(value || {}), monto: parseCurrency(e.target.value) })}
+                className={`w-full pl-8 pr-4 py-2 border-2 ${categoryColor} rounded-lg focus:outline-none focus:ring-2`}
+                placeholder="0"
+              />
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">COP</span>
+            </div>
           </div>
         </div>
       )}
@@ -488,7 +552,7 @@ function QuestionRenderer({
               type="text"
               value={value?.pais || ""}
               onChange={(e) => onChange({ ...(value || {}), pais: e.target.value })}
-              className="w-full px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+              className={`w-full px-4 py-2 border-2 ${categoryColor} rounded-lg focus:outline-none focus:ring-2`}
               placeholder="Colombia"
             />
           </div>
@@ -498,7 +562,7 @@ function QuestionRenderer({
               type="text"
               value={value?.ciudad || ""}
               onChange={(e) => onChange({ ...(value || {}), ciudad: e.target.value })}
-              className="w-full px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+              className={`w-full px-4 py-2 border-2 ${categoryColor} rounded-lg focus:outline-none focus:ring-2`}
               placeholder="Bogotá"
             />
           </div>

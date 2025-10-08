@@ -3,7 +3,11 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { TrendingUp, LogOut, Info } from "lucide-react"
+import { TrendingUp, LogOut, Info, Sparkles } from "lucide-react"
+
+const formatCurrency = (value: number) => {
+  return value.toLocaleString("es-CO")
+}
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -64,9 +68,9 @@ export default function DashboardPage() {
   }
 
   const getTrafficLight = (fhrValue: number) => {
-    if (fhrValue >= 60) return { color: "bg-primary", label: "Excelente" }
-    if (fhrValue >= 40) return { color: "bg-accent", label: "Bueno" }
-    return { color: "bg-destructive", label: "Necesita atención" }
+    if (fhrValue >= 60) return { color: "bg-emerald-500", label: "Excelente" }
+    if (fhrValue >= 40) return { color: "bg-amber-500", label: "Bueno" }
+    return { color: "bg-red-500", label: "Necesita atención" }
   }
 
   if (!profile || !recommendation) {
@@ -85,6 +89,15 @@ export default function DashboardPage() {
     (sum: number, val: any) => sum + Number(val),
     0,
   )
+
+  const expenseColors: Record<string, string> = {
+    vivienda: "#10b981",
+    alimentacion: "#f59e0b",
+    transporte: "#6366f1",
+    educacion: "#8b5cf6",
+    ocio: "#ec4899",
+    otros: "#14b8a6",
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -141,25 +154,46 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        <div className="bg-gradient-to-r from-primary/10 to-purple-500/10 border-2 border-primary/30 rounded-xl p-6 mb-8">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Sparkles className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">Próximamente</h3>
+              <p className="text-foreground/80 leading-relaxed">
+                PROXIMAMENTE INTEGRACIONES DE IA Y MODELOS PREDICTIVOS
+              </p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Análisis avanzado de tus finanzas con inteligencia artificial para recomendaciones personalizadas y
+                predicciones precisas.
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Stats Grid */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <div className="bg-card border border-border rounded-xl p-6">
+          <div className="bg-card border-2 border-emerald-500/30 rounded-xl p-6">
             <p className="text-sm text-muted-foreground mb-1">Ingreso mensual</p>
             <p className="text-2xl font-bold text-foreground">
-              ${profile.financial_info.ingreso_mensual.toLocaleString()}
+              ${formatCurrency(profile.financial_info.ingreso_mensual)}
             </p>
+            <p className="text-xs text-muted-foreground mt-1">COP</p>
           </div>
-          <div className="bg-card border border-border rounded-xl p-6">
+          <div className="bg-card border-2 border-blue-500/30 rounded-xl p-6">
             <p className="text-sm text-muted-foreground mb-1">Ahorro mensual</p>
-            <p className="text-2xl font-bold text-primary">${profile.financial_info.ahorro_mensual.toLocaleString()}</p>
+            <p className="text-2xl font-bold text-blue-600">${formatCurrency(profile.financial_info.ahorro_mensual)}</p>
+            <p className="text-xs text-muted-foreground mt-1">COP</p>
           </div>
-          <div className="bg-card border border-border rounded-xl p-6">
+          <div className="bg-card border-2 border-red-500/30 rounded-xl p-6">
             <p className="text-sm text-muted-foreground mb-1">Deuda total</p>
-            <p className="text-2xl font-bold text-destructive">
-              ${profile.financial_info.deudas.reduce((sum: number, d: any) => sum + d.monto, 0).toLocaleString()}
+            <p className="text-2xl font-bold text-red-600">
+              ${formatCurrency(profile.financial_info.deudas.reduce((sum: number, d: any) => sum + d.monto, 0))}
             </p>
+            <p className="text-xs text-muted-foreground mt-1">COP</p>
           </div>
-          <div className="bg-card border border-border rounded-xl p-6">
+          <div className="bg-card border-2 border-teal-500/30 rounded-xl p-6">
             <p className="text-sm text-muted-foreground mb-1">Financial Health Rate</p>
             <div className="flex items-center gap-2">
               <p className="text-2xl font-bold text-foreground">{fhr}%</p>
@@ -173,21 +207,25 @@ export default function DashboardPage() {
           <h3 className="text-lg font-semibold text-foreground mb-6">Distribución de gastos</h3>
           <div className="flex flex-col md:flex-row items-center gap-8">
             <div className="relative w-48 h-48">
-              <DonutChart data={profile.financial_info.gastos_principales} />
+              <DonutChart data={profile.financial_info.gastos_principales} colors={expenseColors} />
             </div>
             <div className="flex-1 space-y-3 w-full">
               {Object.entries(profile.financial_info.gastos_principales).map(([key, value]: [string, any]) => {
                 const percentage = ((value / totalGastos) * 100).toFixed(1)
+                const color = expenseColors[key] || "#10b981"
                 return (
                   <div key={key}>
                     <div className="flex justify-between text-sm mb-1">
-                      <span className="text-foreground capitalize">{key.replace("_", " ")}</span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
+                        <span className="text-foreground capitalize">{key.replace("_", " ")}</span>
+                      </div>
                       <span className="text-muted-foreground">
-                        ${value.toLocaleString()} ({percentage}%)
+                        ${formatCurrency(value)} COP ({percentage}%)
                       </span>
                     </div>
                     <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
-                      <div className="h-full bg-primary" style={{ width: `${percentage}%` }} />
+                      <div className="h-full" style={{ width: `${percentage}%`, backgroundColor: color }} />
                     </div>
                   </div>
                 )
@@ -221,18 +259,17 @@ export default function DashboardPage() {
   )
 }
 
-function DonutChart({ data }: { data: Record<string, number> }) {
+function DonutChart({ data, colors }: { data: Record<string, number>; colors: Record<string, string> }) {
   const total = Object.values(data).reduce((sum, val) => sum + val, 0)
-  const colors = ["#10b981", "#f59e0b", "#6366f1", "#ec4899", "#8b5cf6", "#14b8a6"]
 
   let currentAngle = 0
-  const segments = Object.entries(data).map(([key, value], index) => {
+  const segments = Object.entries(data).map(([key, value]) => {
     const percentage = value / total
     const angle = percentage * 360
     const startAngle = currentAngle
     currentAngle += angle
 
-    return { key, value, percentage, startAngle, angle, color: colors[index] }
+    return { key, value, percentage, startAngle, angle, color: colors[key] || "#10b981" }
   })
 
   return (
