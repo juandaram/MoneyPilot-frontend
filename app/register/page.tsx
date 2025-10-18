@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft, ArrowRight, TrendingUp } from "lucide-react"
+import { registerUser, getCurrentUser, createPerfil } from "@/lib/api"
 
 const formatCurrency = (value: string) => {
   const num = value.replace(/\D/g, "")
@@ -119,6 +120,8 @@ export default function RegisterPage() {
     nombre: "",
     telefono: "",
   })
+  const [statusMsg, setStatusMsg] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
 
   const currentQuestion = step >= 0 ? QUESTIONS[step] : null
   const progress = step >= 0 ? ((step + 1) / (QUESTIONS.length + 1)) * 100 : 0
@@ -140,16 +143,67 @@ export default function RegisterPage() {
   }
 
   const handleSubmit = async () => {
-    // TODO: Replace with actual API call to /api/auth/register
-    const profile = {
-      ...formData,
-      fecha_creacion: new Date().toISOString(),
+    setIsLoading(true)
+    setStatusMsg("Registrando...")
+
+    try {
+      const registerResult = await registerUser(formData.email, formData.password, formData.nombre)
+
+      if (!registerResult.ok) {
+        setStatusMsg("Error en el registro")
+        setIsLoading(false)
+        return
+      }
+
+      setStatusMsg("Registro exitoso")
+
+      let token = null
+      let currentUser = registerResult.json
+
+      if (registerResult.json?.token) {
+        token = registerResult.json.token
+        localStorage.setItem("mp_token", token)
+        console.log(`[v0] INIT: token saved to localStorage`)
+      }
+
+      if (!currentUser?.id_usuario) {
+        const userResult = await getCurrentUser(token || undefined)
+        if (userResult.ok) {
+          currentUser = userResult.json
+        }
+      }
+
+      const profilePayload = {
+        id_usuario: currentUser?.id_usuario,
+        ingreso_mensual: Number.parseInt(formData.ingreso_mensual || "0"),
+        tipo_ingreso: formData.tipo_ingreso || "fijo",
+        gastos: formData.gastos || {},
+        deudas: formData.deudas || { tiene_deuda: false },
+        ahorro_mensual: Number.parseInt(formData.ahorro_mensual || "0"),
+        meta_financiera: formData.meta_financiera || {},
+        nivel_conocimiento: formData.nivel_conocimiento || 3,
+        tolerancia_riesgo: formData.tolerancia_riesgo || "medio",
+        areas_interes: formData.areas_interes || [],
+        ubicacion: formData.ubicacion || {},
+        telefono: formData.telefono,
+      }
+
+      await createPerfil(profilePayload, token || undefined)
+
+      localStorage.setItem("user_profile", JSON.stringify(profilePayload))
+      if (currentUser) {
+        localStorage.setItem("current_user", JSON.stringify(currentUser))
+      }
+
+      setStatusMsg("¡Todo listo!")
+      setTimeout(() => {
+        router.push("/dashboard")
+      }, 500)
+    } catch (error: any) {
+      console.error(`[v0] REGISTER: Unexpected error`, error)
+      setStatusMsg("Error inesperado")
+      setIsLoading(false)
     }
-
-    localStorage.setItem("user_profile", JSON.stringify(profile))
-    localStorage.setItem("auth_token", "mock_token_" + Date.now())
-
-    router.push("/dashboard")
   }
 
   const updateFormData = (key: string, value: any) => {
@@ -174,6 +228,12 @@ export default function RegisterPage() {
           <div className="w-full max-w-md">
             <h1 className="text-3xl font-bold text-foreground mb-2">Crear cuenta</h1>
             <p className="text-muted-foreground mb-8">Comienza tu viaje hacia una mejor salud financiera</p>
+
+            {statusMsg && (
+              <div className="mb-4 p-3 bg-secondary rounded-lg text-center">
+                <p className="text-sm text-foreground">{statusMsg}</p>
+              </div>
+            )}
 
             <div className="space-y-4">
               <div>
@@ -222,7 +282,8 @@ export default function RegisterPage() {
 
               <button
                 onClick={() => setStep(0)}
-                className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                disabled={isLoading}
+                className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
               >
                 Continuar
               </button>
@@ -253,7 +314,6 @@ export default function RegisterPage() {
         </div>
       </header>
 
-      {/* Progress Bar */}
       <div className="bg-card border-b border-border">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between mb-2">
@@ -270,6 +330,12 @@ export default function RegisterPage() {
 
       <main className="flex-1 container mx-auto px-4 py-8 flex items-center justify-center">
         <div className="w-full max-w-2xl">
+          {statusMsg && (
+            <div className="mb-4 p-3 bg-secondary rounded-lg text-center">
+              <p className="text-sm text-foreground">{statusMsg}</p>
+            </div>
+          )}
+
           {currentQuestion && (
             <QuestionRenderer
               question={currentQuestion}
@@ -281,16 +347,18 @@ export default function RegisterPage() {
           <div className="flex gap-4 mt-8">
             <button
               onClick={handleBack}
-              className="flex items-center gap-2 px-6 py-3 bg-secondary text-secondary-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors"
+              disabled={isLoading}
+              className="flex items-center gap-2 px-6 py-3 bg-secondary text-secondary-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors disabled:opacity-50"
             >
               <ArrowLeft className="w-4 h-4" />
               Anterior
             </button>
             <button
               onClick={handleNext}
-              className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+              disabled={isLoading}
+              className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
-              {step === QUESTIONS.length - 1 ? "Finalizar" : "Siguiente"}
+              {isLoading ? "Procesando..." : step === QUESTIONS.length - 1 ? "Finalizar" : "Siguiente"}
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>

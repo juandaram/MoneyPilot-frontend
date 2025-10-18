@@ -1,0 +1,6 @@
+{
+  "id_usuario": 1,
+  "email": "user@example.com",
+  "nombre": "Usuario Demo",
+  "created_at": "2025-01-18T10:00:00Z"
+}

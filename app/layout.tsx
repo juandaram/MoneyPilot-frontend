@@ -15,7 +15,6 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "MoneyPilot - Tu asistente financiero personal",
   description: "Consejos diarios simples, contextualizados y sin jerga para Latinoamérica",
-    generator: 'v0.app'
 }
 
 export default function RootLayout({

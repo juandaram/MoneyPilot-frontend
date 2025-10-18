@@ -2,23 +2,71 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { TrendingUp } from "lucide-react"
+import { loginUser, getCurrentUser } from "@/lib/api"
 
 export default function LoginPage() {
   const router = useRouter()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [statusMsg, setStatusMsg] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+
+  useEffect(() => {
+    const token = localStorage.getItem("mp_token")
+    if (token) {
+      console.log(`[v0] INIT: token found in localStorage`)
+      // Optionally verify token is still valid
+    } else {
+      console.log(`[v0] INIT: no token in localStorage`)
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setIsLoading(true)
+    setStatusMsg("Iniciando sesión...")
 
-    // TODO: Replace with actual API call to /api/auth/login
-    if (email && password) {
-      localStorage.setItem("auth_token", "mock_token_" + Date.now())
-      router.push("/dashboard")
+    try {
+      // Step 1: Login
+      const loginResult = await loginUser(email, password)
+
+      if (!loginResult.ok) {
+        setStatusMsg("Error en el login")
+        setIsLoading(false)
+        return
+      }
+
+      setStatusMsg("Login exitoso")
+
+      // Step 2: Check for token in response
+      let token = null
+      // TODO: Verify actual token field name from API response
+      if (loginResult.json?.token) {
+        token = loginResult.json.token
+        localStorage.setItem("mp_token", token)
+        console.log(`[v0] LOGIN: token saved to localStorage`)
+      }
+
+      // Step 3: Fetch current user (API may return null body on login)
+      const userResult = await getCurrentUser(token || undefined)
+
+      if (userResult.ok && userResult.json) {
+        localStorage.setItem("current_user", JSON.stringify(userResult.json))
+        console.log(`[v0] LOGIN: current user saved`, userResult.json)
+      }
+
+      // Navigate to dashboard
+      setTimeout(() => {
+        router.push("/dashboard")
+      }, 500)
+    } catch (error: any) {
+      console.error(`[v0] LOGIN: Unexpected error`, error)
+      setStatusMsg("Error inesperado")
+      setIsLoading(false)
     }
   }
 
@@ -39,6 +87,12 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           <h1 className="text-3xl font-bold text-foreground mb-2">Iniciar sesión</h1>
           <p className="text-muted-foreground mb-8">Bienvenido de vuelta a MoneyPilot</p>
+
+          {statusMsg && (
+            <div className="mb-4 p-3 bg-secondary rounded-lg text-center">
+              <p className="text-sm text-foreground">{statusMsg}</p>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -67,9 +121,10 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+              disabled={isLoading}
+              className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
-              Iniciar sesión
+              {isLoading ? "Iniciando sesión..." : "Iniciar sesión"}
             </button>
 
             <p className="text-sm text-center text-muted-foreground">
