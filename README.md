@@ -112,4 +112,4 @@ Interpretación:
 
 ## Licencia
 
-Este proyecto es un prototipo de demostración.
+Este proyecto es un prototipo de demostración..
